@@ -2,7 +2,7 @@
 
 == Executive Summary
 
-Declaring local variables as `final` provides better code metrics and improves performance both for interpreted and compiled code.
+Declaring local variables as `final` provides better code metrics and can also improve performance, both for interpreted and compiled code.
 
 == Structural Benefits
 
