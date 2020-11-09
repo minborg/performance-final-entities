@@ -34,8 +34,8 @@ public class BenchParams {
         return methods.ff(42,13);
     }
 
-    public static void main(String[] args) throws IOException, RunnerException {
+/*    public static void main(String[] args) throws IOException, RunnerException {
         org.openjdk.jmh.Main.main(args);
-    }
+    }*/
 
 }
