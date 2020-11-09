@@ -253,3 +253,82 @@ Mops/s
 ....
 
 NOTE: Running the benchmarks under Java 8 will also produce better results for final local variables.
+
+== Method Parameters
+
+Declaring a parameter to a method final does not affect performance on the receiving end as shown hereunder:
+
+=== Java Code
+
+[source, java]
+----
+package net.openhft.chronicle.finality.param;
+
+public final class Params {
+
+    public int nfnf(int ask, int bid) {
+
+        return ask - bid;
+    }
+
+    public int fnf(final int ask, int bid) {
+
+        return ask - bid;
+    }
+
+    public int nff(int ask, final int bid) {
+
+        return ask - bid;
+    }
+
+    public int ff(final int ask, final int bid) {
+
+        return ask - bid;
+    }
+
+}
+----
+
+
+=== Byte Code
+
+[source, text]
+----
+public final class net.openhft.chronicle.finality.param.Params {
+  public net.openhft.chronicle.finality.param.Params();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public int nfnf(int, int);
+    Code:
+       0: iload_1
+       1: iload_2
+       2: isub
+       3: ireturn
+
+  public int fnf(int, int);
+    Code:
+       0: iload_1
+       1: iload_2
+       2: isub
+       3: ireturn
+
+  public int nff(int, int);
+    Code:
+       0: iload_1
+       1: iload_2
+       2: isub
+       3: ireturn
+
+  public int ff(int, int);
+    Code:
+       0: iload_1
+       1: iload_2
+       2: isub
+       3: ireturn
+}
+----
+
+

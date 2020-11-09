@@ -59,6 +59,24 @@
                             <classpathScope>compile</classpathScope>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>Params</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <argument>net.openhft.chronicle.finality.param.BenchParams</argument>
+                            </arguments>
+                            <classpathScope>compile</classpathScope>
+                        </configuration>
+                    </execution>
+
+
                 </executions>
             </plugin>
         </plugins>
