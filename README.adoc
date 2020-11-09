@@ -2,7 +2,7 @@
 
 == Executive Summary
 
-Declaring local variables as `final` provides better code metrics and improves performance.
+Declaring local variables as `final` provides better code metrics and improves performance both for interpreted and compiled code.
 
 == Structural Benefits
 
@@ -12,7 +12,7 @@ As we all know, a final variable may only be assigned once. Declaring a variable
 
 What is less known by the general audience is that *declaring a local variable as final can improve performance*. The reason for this is that the java compiler will take different actions if local variables are final compared to if they are non-final. More specifically, javac will output different byte code depending on finality.
 
-=== Byte Code
+=== Java Code
 
 Consider the following class with all the possible variants for final and non-final local variables:
 
@@ -53,7 +53,7 @@ public final class Methods {
 }
 ----
 
-The methods are compiled using Java 8 and are subsequently analyzied using `javap`:
+The methods are compiled using Java 8 and are subsequently analyzed using `javap`:
 
 [source, shell script]
 ----
@@ -61,6 +61,8 @@ $ mvn clean install
 $ cd target/classes/net/openhft/chronicle/finality/
 $ javap -c Methods
 ----
+
+=== Byte Code
 
 This will produce the following output:
 
