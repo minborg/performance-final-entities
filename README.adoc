@@ -1,0 +1,250 @@
+= Final Local Variables and Performance
+
+== Executive Summary
+
+Declaring local variables as `final` provides better code metrics and improves performance.
+
+== Structural Benefits
+
+As we all know, a final variable may only be assigned once. Declaring a variable final can serve as useful documentation that its value will not change and can help avoid programming errors. It also signals intent and promotes a better coding style, nudging away coders from mutable logic.
+
+== Performance Implications
+
+What is less known by the general audience is that *declaring a local variable as final can improve performance*. The reason for this is that the java compiler will take different actions if local variables are final compared to if they are non-final. More specifically, javac will output different byte code depending on finality.
+
+=== Byte Code
+
+Consider the following class with all the possible variants for final and non-final local variables:
+
+[source, java]
+----
+package net.openhft.chronicle.finality;
+
+public final class Methods {
+
+    public int nfnf() {
+        int ask = 1;
+        int bid = 2;
+
+        return ask - bid;
+    }
+
+    public int fnf() {
+        final int ask = 1;
+        int bid = 2;
+
+        return ask - bid;
+    }
+
+    public int nff() {
+        int ask = 1;
+        final int bid = 2;
+
+        return ask - bid;
+    }
+
+    public int ff() {
+        final int ask = 1;
+        final int bid = 2;
+
+        return ask - bid;
+    }
+
+}
+----
+
+The methods are compiled using Java 8 and are subsequently analyzied using `javap`:
+
+[source, shell script]
+----
+$ mvn clean install
+$ cd target/classes/net/openhft/chronicle/finality/
+$ javap -c Methods
+----
+
+This will produce the following output:
+
+[source, text]
+----
+Compiled from "Methods.java"
+public final class net.openhft.chronicle.finality.Methods {
+  public net.openhft.chronicle.finality.Methods();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public int nfnf();
+    Code:
+       0: bipush        42
+       2: istore_1
+       3: bipush        13
+       5: istore_2
+       6: iload_1
+       7: iload_2
+       8: isub
+       9: ireturn
+
+  public int fnf();
+    Code:
+       0: bipush        42
+       2: istore_1
+       3: bipush        13
+       5: istore_2
+       6: bipush        42
+       8: iload_2
+       9: isub
+      10: ireturn
+
+  public int nff();
+    Code:
+       0: bipush        42
+       2: istore_1
+       3: bipush        13
+       5: istore_2
+       6: iload_1
+       7: bipush        13
+       9: isub
+      10: ireturn
+
+  public int ff();
+    Code:
+       0: bipush        42
+       2: istore_1
+       3: bipush        13
+       5: istore_2
+       6: bipush        29
+       8: ireturn
+}
+----
+
+All local variable values are pushed onto the stack. Apparently, final variables are again pushed on the stack before the `isub` operations.
+If both variable are final, the compiler completely skips any variable loading and subtraction and directly creates a constant that is returned.
+
+NOTE: The same byte code is produced by Java 15.
+
+=== Benchmarking
+
+The benchmark figures presented above are obtained using Java 15.
+
+Running JMH tests in interpreting mode (`-Xint`) produces the following results:
+
+[source, shell script]
+----
+$ mvn exec:exec@InterpretingMode
+----
+
+[source, text]
+----
+# JMH version: 1.19
+# VM version: JDK 15, VM 15+36
+...
+# Run complete. Total time: 00:05:23
+
+Benchmark    Mode  Cnt        Score        Error  Units
+Bench.ff    thrpt   20  7330132.498 ±  75509.695  ops/s
+Bench.fnf   thrpt   20  6718820.758 ± 153781.406  ops/s
+Bench.nff   thrpt   20  6758901.295 ± 107004.689  ops/s
+Bench.nfnf  thrpt   20  6833704.639 ± 129824.655  ops/s
+----
+
+[ditaa]
+....
+Mops/s           73
+          ^    +----+
+          |    |    |                             68                68
+   70    -+-   |    |             67            +----+          +----+
+          |    |    |           +----+          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   60    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   50    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   40    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   30    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   20    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   10    -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          +----+----+-----------+----+----------+----+----------+----+-> Type
+                ff              fnf              nff            nfnf
+....
+
+
+Running JMH tests in JIT mode produces the following results (after warmup):
+
+[source, shell script]
+----
+$ mvn exec:exec@CompiledMode
+----
+
+[source, text]
+----
+# JMH version: 1.19
+# VM version: JDK 15, VM 15+36
+...
+# Run complete. Total time: 00:05:26
+
+Benchmark    Mode  Cnt          Score          Error  Units
+Bench.ff    thrpt   20  554199168.529 ± 14135259.828  ops/s
+Bench.fnf   thrpt   20  527017952.835 ± 12746114.143  ops/s
+Bench.nff   thrpt   20  535319801.891 ± 16581859.971  ops/s
+Bench.nfnf  thrpt   20  534469534.590 ± 17529337.602  ops/s
+----
+
+[ditaa]
+....
+Mops/s
+          ^      554
+          |    +----+            527             535             534
+          |    |    |           +----+          +----+          +----+
+   500   -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   400   -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   300   -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   200   -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+   100   -+-   |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          |    |    |           |    |          |    |          |    |
+          +----+----+-----------+----+----------+----+----------+----+-> Type
+                ff              fnf              nff            nfnf
+....
