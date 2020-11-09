@@ -10,7 +10,8 @@ As we all know, a final variable may only be assigned once. Declaring a variable
 
 == Performance Implications
 
-What is less known by the general audience is that *declaring a local variable as final can improve performance*. The reason for this is that the java compiler will take different actions if local variables are final compared to if they are non-final. More specifically, javac will output different byte code depending on finality.
+What is less known by the general audience is that *declaring a local variable as final can improve performance*. The reason for this is that the java compiler will take different actions if local variables are final compared to if they are non-final.
+More specifically, javac will output different byte code depending on finality. This is also true for the JIT compiler (at least Oracle's).
 
 === Java Code
 
@@ -23,29 +24,29 @@ package net.openhft.chronicle.finality;
 public final class Methods {
 
     public int nfnf() {
-        int ask = 1;
-        int bid = 2;
+        int ask = 42;
+        int bid = 13;
 
         return ask - bid;
     }
 
     public int fnf() {
-        final int ask = 1;
-        int bid = 2;
+        final int ask = 42;
+        int bid = 13;
 
         return ask - bid;
     }
 
     public int nff() {
-        int ask = 1;
-        final int bid = 2;
+        int ask = 42;
+        final int bid = 13;
 
         return ask - bid;
     }
 
     public int ff() {
-        final int ask = 1;
-        final int bid = 2;
+        final int ask = 42;
+        final int bid = 13;
 
         return ask - bid;
     }
@@ -250,3 +251,5 @@ Mops/s
           +----+----+-----------+----+----------+----+----------+----+-> Type
                 ff              fnf              nff            nfnf
 ....
+
+NOTE: Running the benchmarks under Java 8 will also produce better results for final local variables.
